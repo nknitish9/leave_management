@@ -13,10 +13,21 @@ const Dashboard = () => {
   });
   const [recentLeaves, setRecentLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState([]);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [balanceForm, setBalanceForm] = useState({ sick: 0, casual: 0, annual: 0 });
+  const [savingBalance, setSavingBalance] = useState(false);
+  const [balanceMessage, setBalanceMessage] = useState('');
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      fetchUsers();
+    }
+  }, [user?.role]);
 
   const fetchDashboardData = async () => {
     try {
@@ -38,12 +49,84 @@ const Dashboard = () => {
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      const response = await api.get('/users');
+      const userList = response.data.data || [];
+      setUsers(userList);
+      if (userList.length === 0) {
+        setSelectedUserId('');
+      } else if (!selectedUserId) {
+        const first = userList[0];
+        setSelectedUserId(first._id);
+        setBalanceForm({
+          sick: first.leaveBalance?.sick ?? 0,
+          casual: first.leaveBalance?.casual ?? 0,
+          annual: first.leaveBalance?.annual ?? 0
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setBalanceMessage(
+        error.response?.data?.message || 'Failed to load users. Please try again.'
+      );
+    }
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const handleUserChange = (e) => {
+    const id = e.target.value;
+    setSelectedUserId(id);
+    const selected = users.find((u) => u._id === id);
+    if (selected) {
+      setBalanceForm({
+        sick: selected.leaveBalance?.sick ?? 0,
+        casual: selected.leaveBalance?.casual ?? 0,
+        annual: selected.leaveBalance?.annual ?? 0
+      });
+    }
+  };
+
+  const handleBalanceChange = (e) => {
+    const { name, value } = e.target;
+    setBalanceForm((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleBalanceSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedUserId) {
+      setBalanceMessage('Please select a user.');
+      return;
+    }
+    setSavingBalance(true);
+    setBalanceMessage('');
+    try {
+      const payload = {
+        sick: Number(balanceForm.sick),
+        casual: Number(balanceForm.casual),
+        annual: Number(balanceForm.annual)
+      };
+      const response = await api.put(`/users/${selectedUserId}/leave-balance`, payload);
+      const updated = response.data.data;
+      setUsers((prev) =>
+        prev.map((u) => (u._id === updated.id ? { ...u, leaveBalance: updated.leaveBalance } : u))
+      );
+      setBalanceMessage('Leave balance updated successfully.');
+    } catch (error) {
+      setBalanceMessage(error.response?.data?.message || 'Failed to update leave balance.');
+    } finally {
+      setSavingBalance(false);
+    }
   };
 
   if (loading) {
@@ -138,6 +221,71 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {user?.role === 'admin' && (
+        <div className="admin-balance-section">
+          <h2>Set Employee Leave Balance</h2>
+          <form className="admin-balance-form" onSubmit={handleBalanceSubmit}>
+            <div className="form-group">
+              <label>Employee</label>
+              {users.length === 0 ? (
+                <div className="admin-balance-message">No employees found.</div>
+              ) : (
+                <select value={selectedUserId} onChange={handleUserChange}>
+                  {users.map((u) => (
+                    <option key={u._id} value={u._id}>
+                      {u.name} ({u.email}){u.role ? ` - ${u.role}` : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <div className="admin-balance-row">
+              <div className="form-group">
+                <label>Sick Leave</label>
+                <input
+                  type="number"
+                  name="sick"
+                  min="0"
+                  value={balanceForm.sick}
+                  onChange={handleBalanceChange}
+                  disabled={users.length === 0}
+                />
+              </div>
+              <div className="form-group">
+                <label>Casual Leave</label>
+                <input
+                  type="number"
+                  name="casual"
+                  min="0"
+                  value={balanceForm.casual}
+                  onChange={handleBalanceChange}
+                  disabled={users.length === 0}
+                />
+              </div>
+              <div className="form-group">
+                <label>Annual Leave</label>
+                <input
+                  type="number"
+                  name="annual"
+                  min="0"
+                  value={balanceForm.annual}
+                  onChange={handleBalanceChange}
+                  disabled={users.length === 0}
+                />
+              </div>
+            </div>
+            {balanceMessage && (
+              <div className="admin-balance-message">{balanceMessage}</div>
+            )}
+            <div className="admin-balance-actions">
+              <button className="btn-primary" type="submit" disabled={savingBalance || users.length === 0}>
+                {savingBalance ? 'Saving...' : 'Save Balance'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Recent Leaves */}
       <div className="recent-section">

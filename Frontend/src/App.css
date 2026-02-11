@@ -545,6 +545,47 @@ body {
   gap: 1.5rem;
 }
 
+.admin-balance-section {
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+}
+
+.admin-balance-section h2 {
+  margin-bottom: 1.5rem;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.admin-balance-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.admin-balance-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.admin-balance-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.admin-balance-message {
+  background-color: #fef3c7;
+  color: #92400e;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  border-left: 4px solid var(--warning-color);
+}
+
 .stat-card {
   padding: 1.5rem;
   border-radius: 0.75rem;
