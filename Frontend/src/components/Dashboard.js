@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -23,12 +23,6 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
-  useEffect(() => {
-    if (user?.role === 'admin') {
-      fetchUsers();
-    }
-  }, [user?.role]);
-
   const fetchDashboardData = async () => {
     try {
       const response = await api.get('/leaves');
@@ -49,7 +43,7 @@ const Dashboard = () => {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const response = await api.get('/users');
       const userList = response.data.data || [];
@@ -71,7 +65,13 @@ const Dashboard = () => {
         error.response?.data?.message || 'Failed to load users. Please try again.'
       );
     }
-  };
+  }, [selectedUserId]);
+
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      fetchUsers();
+    }
+  }, [user?.role, fetchUsers]);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {

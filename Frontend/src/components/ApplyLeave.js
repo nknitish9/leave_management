@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -17,19 +17,19 @@ const ApplyLeave = () => {
   const { user, updateUserBalance } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (formData.startDate && formData.endDate) {
-      calculateLeaveDays();
-    }
-  }, [formData.startDate, formData.endDate]);
-
-  const calculateLeaveDays = () => {
+  const calculateLeaveDays = useCallback(() => {
     const start = new Date(formData.startDate);
     const end = new Date(formData.endDate);
     const diffTime = Math.abs(end - start);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both start and end dates
     setLeaveDays(diffDays);
-  };
+  }, [formData.startDate, formData.endDate]);
+
+  useEffect(() => {
+    if (formData.startDate && formData.endDate) {
+      calculateLeaveDays();
+    }
+  }, [formData.startDate, formData.endDate, calculateLeaveDays]);
 
   const handleChange = (e) => {
     setFormData({

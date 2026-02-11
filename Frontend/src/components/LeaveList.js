@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
@@ -16,10 +16,6 @@ const LeaveList = () => {
     fetchLeaves();
   }, []);
 
-  useEffect(() => {
-    applyFilters();
-  }, [filters, leaves]);
-
   const fetchLeaves = async () => {
     try {
       const response = await api.get('/leaves');
@@ -32,7 +28,7 @@ const LeaveList = () => {
     }
   };
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...leaves];
 
     if (filters.status !== 'all') {
@@ -44,7 +40,11 @@ const LeaveList = () => {
     }
 
     setFilteredLeaves(filtered);
-  };
+  }, [filters, leaves]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
 
   const handleFilterChange = (e) => {
     setFilters({
