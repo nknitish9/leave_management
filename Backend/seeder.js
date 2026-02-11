@@ -56,10 +56,8 @@ const seedUsers = async () => {
       });
 
       await user.save();
-      console.log(`Created user: ${userData.email}`);
     }
 
-    console.log('Demo users created successfully!');
     process.exit();
   } catch (error) {
     console.error(error);

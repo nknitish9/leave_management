@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
@@ -11,51 +11,61 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  const getInitial = (name) => (name ? name.charAt(0).toUpperCase() : 'U');
+
   return (
     <nav className="navbar">
       <div className="navbar-container">
         <div className="navbar-brand">
-          <Link to="/dashboard" className="brand-link">
-            📅 Leave Management
-          </Link>
+          <NavLink to="/dashboard" className="brand-link">
+            <span className="brand-icon">🗓️</span>
+            <span>LeaveFlow</span>
+          </NavLink>
         </div>
 
         <div className="navbar-menu">
           {user ? (
             <>
-              <Link to="/dashboard" className="nav-link">
-                Dashboard
-              </Link>
-              <Link to="/apply-leave" className="nav-link">
-                Apply Leave
-              </Link>
-              <Link to="/leaves" className="nav-link">
-                My Leaves
-              </Link>
+              <div className="nav-links">
+                <NavLink
+                  to="/dashboard"
+                  className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+                >
+                  Dashboard
+                </NavLink>
+                <NavLink
+                  to="/apply-leave"
+                  className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+                >
+                  Apply Leave
+                </NavLink>
+                <NavLink
+                  to="/leaves"
+                  className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+                >
+                  My Leaves
+                </NavLink>
+              </div>
 
               <div className="navbar-user">
-                <span className="user-info">
-                  Welcome, {user.name}
-                  {user.role === 'admin' && (
-                    <span className="admin-badge">Admin</span>
-                  )}
-                </span>
-                <button
-                  onClick={handleLogout}
-                  className="btn-logout"
-                >
+                <span className="user-avatar">{getInitial(user.name)}</span>
+                <div className="user-meta">
+                  <span className="user-name">{user.name}</span>
+                  {user.role === 'admin' && <span className="admin-badge">Admin</span>}
+                </div>
+                <button onClick={handleLogout} className="btn-ghost">
                   Logout
                 </button>
               </div>
             </>
           ) : (
             <div className="navbar-auth">
-              <Link to="/login" className="nav-link">
+              <NavLink to="/login" className="nav-link">
                 Login
-              </Link>
-              <Link to="/register" className="nav-link">
+              </NavLink>
+              <NavLink to="/register" className="nav-link">
                 Register
-              </Link>
+              </NavLink>
             </div>
           )}
         </div>

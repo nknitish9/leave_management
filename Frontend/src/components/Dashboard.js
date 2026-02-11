@@ -30,12 +30,12 @@ const Dashboard = () => {
 
       setStats({
         totalLeaves: leaves.length,
-        pendingLeaves: leaves.filter(l => l.status === 'pending').length,
-        approvedLeaves: leaves.filter(l => l.status === 'approved').length,
-        rejectedLeaves: leaves.filter(l => l.status === 'rejected').length
+        pendingLeaves: leaves.filter((l) => l.status === 'pending').length,
+        approvedLeaves: leaves.filter((l) => l.status === 'approved').length,
+        rejectedLeaves: leaves.filter((l) => l.status === 'rejected').length
       });
 
-      setRecentLeaves(leaves.slice(0, 5));
+      setRecentLeaves(leaves.slice(0, 4));
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -81,6 +81,13 @@ const Dashboard = () => {
     });
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   const handleUserChange = (e) => {
     const id = e.target.value;
     setSelectedUserId(id);
@@ -116,11 +123,7 @@ const Dashboard = () => {
         casual: Number(balanceForm.casual),
         annual: Number(balanceForm.annual)
       };
-      const response = await api.put(`/users/${selectedUserId}/leave-balance`, payload);
-      const updated = response.data.data;
-      setUsers((prev) =>
-        prev.map((u) => (u._id === updated.id ? { ...u, leaveBalance: updated.leaveBalance } : u))
-      );
+      await api.put(`/users/${selectedUserId}/leave-balance`, payload);
       setBalanceMessage('Leave balance updated successfully.');
     } catch (error) {
       setBalanceMessage(error.response?.data?.message || 'Failed to update leave balance.');
@@ -130,218 +133,198 @@ const Dashboard = () => {
   };
 
   if (loading) {
-    return <div className="dashboard"><h1>Loading...</h1></div>;
+    return <div className="page-loading">Loading...</div>;
   }
 
   return (
     <div className="dashboard">
-      <div className="dashboard-header">
+      <div className="page-header">
         <div>
-          <h1>Welcome, {user?.name}!</h1>
-          <p className="dashboard-subtitle">
-            {user?.role === 'admin' 
-              ? 'Manage all leave applications and team requests' 
-              : 'Track your leave balance and applications'}
+          <h1 className="page-title">
+            {getGreeting()}, {user?.name} <span className="wave">👋</span>
+          </h1>
+          <p className="page-subtitle">
+            {user?.role === 'admin'
+              ? 'Here’s an overview of all leave requests across your organization.'
+              : 'Here’s a snapshot of your leave requests and balance.'}
           </p>
         </div>
-        <Link to="/apply-leave" className="btn-primary">
-          ➕ Apply for Leave
-        </Link>
       </div>
 
-      {/* Leave Balance Cards */}
-      {user?.role === 'employee' && (
-        <div className="balance-section">
-          <h2>Your Leave Balance</h2>
-          <div className="balance-cards">
-            <div className="balance-card sick">
-              <div className="balance-icon">🤒</div>
-              <div className="balance-info">
-                <h3>Sick Leave</h3>
-                <div className="balance-count">{user?.leaveBalance?.sick || 0}</div>
-                <p>days remaining</p>
-              </div>
-            </div>
-
-            <div className="balance-card casual">
-              <div className="balance-icon">☀️</div>
-              <div className="balance-info">
-                <h3>Casual Leave</h3>
-                <div className="balance-count">{user?.leaveBalance?.casual || 0}</div>
-                <p>days remaining</p>
-              </div>
-            </div>
-
-            <div className="balance-card annual">
-              <div className="balance-icon">🏖️</div>
-              <div className="balance-info">
-                <h3>Annual Leave</h3>
-                <div className="balance-count">{user?.leaveBalance?.annual || 0}</div>
-                <p>days remaining</p>
-              </div>
-            </div>
+      <div className="stat-grid">
+        <div className="stat-card">
+          <div className="stat-icon">📊</div>
+          <div>
+            <span>Total Leaves</span>
+            <strong>{stats.totalLeaves}</strong>
           </div>
         </div>
-      )}
-
-      {/* Statistics Cards */}
-      <div className="stats-section">
-        <h2>{user?.role === 'admin' ? 'Leave Statistics' : 'Your Leave Statistics'}</h2>
-        <div className="stats-cards">
-          <div className="stat-card total">
-            <div className="stat-icon">📊</div>
-            <div className="stat-info">
-              <h3>Total Applications</h3>
-              <div className="stat-count">{stats.totalLeaves}</div>
-            </div>
+        <div className="stat-card">
+          <div className="stat-icon warning">⏳</div>
+          <div>
+            <span>Pending</span>
+            <strong>{stats.pendingLeaves}</strong>
           </div>
-
-          <div className="stat-card pending">
-            <div className="stat-icon">⏳</div>
-            <div className="stat-info">
-              <h3>Pending</h3>
-              <div className="stat-count">{stats.pendingLeaves}</div>
-            </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon success">✅</div>
+          <div>
+            <span>Approved</span>
+            <strong>{stats.approvedLeaves}</strong>
           </div>
-
-          <div className="stat-card approved">
-            <div className="stat-icon">✅</div>
-            <div className="stat-info">
-              <h3>Approved</h3>
-              <div className="stat-count">{stats.approvedLeaves}</div>
-            </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon danger">❌</div>
+          <div>
+            <span>Rejected</span>
+            <strong>{stats.rejectedLeaves}</strong>
           </div>
+        </div>
+      </div>
 
-          <div className="stat-card rejected">
-            <div className="stat-icon">❌</div>
-            <div className="stat-info">
-              <h3>Rejected</h3>
-              <div className="stat-count">{stats.rejectedLeaves}</div>
-            </div>
+      <div className="dashboard-grid">
+        <div className="panel">
+          <div className="panel-header">
+            <h2>Recent Leave Requests</h2>
+            <Link to="/leaves" className="text-link">
+              View All →
+            </Link>
           </div>
+          <div className="panel-body">
+            {recentLeaves.length === 0 ? (
+              <div className="empty-state">No leave requests yet.</div>
+            ) : (
+              recentLeaves.map((leave) => (
+                <div key={leave._id} className="leave-row">
+                  <div className="leave-badges">
+                    <span className={`badge type ${leave.leaveType}`}>{leave.leaveType}</span>
+                    <span className={`badge status ${leave.status}`}>{leave.status}</span>
+                  </div>
+                  <div className="leave-main">
+                    <div className="leave-title">
+                      {user?.role === 'admin' ? leave.user?.name || 'Employee' : user?.name}
+                    </div>
+                    <div className="leave-reason-text">{leave.reason}</div>
+                    <div className="leave-meta">
+                      {formatDate(leave.startDate)} — {formatDate(leave.endDate)} ·{' '}
+                      {leave.numberOfDays} day(s)
+                    </div>
+                  </div>
+                  <div className="leave-date">Applied {formatDate(leave.appliedAt)}</div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="side-panel">
+          {user?.role === 'employee' && (
+            <div className="panel">
+              <div className="panel-header">
+                <h2>Leave Balance</h2>
+              </div>
+              <div className="panel-body">
+                {['sick', 'casual', 'annual'].map((type) => (
+                  <div key={type} className="balance-row">
+                    <div className="balance-label">
+                      <span className="balance-name">
+                        {type.charAt(0).toUpperCase() + type.slice(1)} Leave
+                      </span>
+                      <span className="balance-value">{user?.leaveBalance?.[type] ?? 0}</span>
+                    </div>
+                    <div className="balance-bar">
+                      <div
+                        className={`balance-fill ${type}`}
+                        style={{ width: `${Math.min(100, (user?.leaveBalance?.[type] ?? 0) * 5)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <Link to="/apply-leave" className="panel apply-card">
+            <div className="apply-icon">➕</div>
+            <div>
+              <h3>Apply for Leave</h3>
+              <p>Submit a new leave request</p>
+            </div>
+            <span className="apply-arrow">→</span>
+          </Link>
         </div>
       </div>
 
       {user?.role === 'admin' && (
-        <div className="admin-balance-section">
-          <h2>Set Employee Leave Balance</h2>
-          <form className="admin-balance-form" onSubmit={handleBalanceSubmit}>
-            <div className="form-group">
-              <label>Employee</label>
-              {users.length === 0 ? (
-                <div className="admin-balance-message">No employees found.</div>
-              ) : (
-                <select value={selectedUserId} onChange={handleUserChange}>
-                  {users.map((u) => (
-                    <option key={u._id} value={u._id}>
-                      {u.name} ({u.email}){u.role ? ` - ${u.role}` : ''}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-            <div className="admin-balance-row">
+        <div className="panel">
+          <div className="panel-header">
+            <h2>Set Employee Leave Balance</h2>
+          </div>
+          <div className="panel-body">
+            <form className="admin-form" onSubmit={handleBalanceSubmit}>
               <div className="form-group">
-                <label>Sick Leave</label>
-                <input
-                  type="number"
-                  name="sick"
-                  min="0"
-                  value={balanceForm.sick}
-                  onChange={handleBalanceChange}
-                  disabled={users.length === 0}
-                />
+                <label>Employee</label>
+                {users.length === 0 ? (
+                  <div className="admin-balance-message">No employees found.</div>
+                ) : (
+                  <select value={selectedUserId} onChange={handleUserChange}>
+                    {users.map((u) => (
+                      <option key={u._id} value={u._id}>
+                        {u.name} ({u.email}){u.role ? ` - ${u.role}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
-              <div className="form-group">
-                <label>Casual Leave</label>
-                <input
-                  type="number"
-                  name="casual"
-                  min="0"
-                  value={balanceForm.casual}
-                  onChange={handleBalanceChange}
-                  disabled={users.length === 0}
-                />
+              <div className="admin-balance-row">
+                <div className="form-group">
+                  <label>Sick Leave</label>
+                  <input
+                    type="number"
+                    name="sick"
+                    min="0"
+                    value={balanceForm.sick}
+                    onChange={handleBalanceChange}
+                    disabled={users.length === 0}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Casual Leave</label>
+                  <input
+                    type="number"
+                    name="casual"
+                    min="0"
+                    value={balanceForm.casual}
+                    onChange={handleBalanceChange}
+                    disabled={users.length === 0}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Annual Leave</label>
+                  <input
+                    type="number"
+                    name="annual"
+                    min="0"
+                    value={balanceForm.annual}
+                    onChange={handleBalanceChange}
+                    disabled={users.length === 0}
+                  />
+                </div>
               </div>
-              <div className="form-group">
-                <label>Annual Leave</label>
-                <input
-                  type="number"
-                  name="annual"
-                  min="0"
-                  value={balanceForm.annual}
-                  onChange={handleBalanceChange}
-                  disabled={users.length === 0}
-                />
+              {balanceMessage && <div className="admin-balance-message">{balanceMessage}</div>}
+              <div className="admin-actions">
+                <button
+                  className="btn-primary"
+                  type="submit"
+                  disabled={savingBalance || users.length === 0}
+                >
+                  {savingBalance ? 'Saving...' : 'Save Balance'}
+                </button>
               </div>
-            </div>
-            {balanceMessage && (
-              <div className="admin-balance-message">{balanceMessage}</div>
-            )}
-            <div className="admin-balance-actions">
-              <button className="btn-primary" type="submit" disabled={savingBalance || users.length === 0}>
-                {savingBalance ? 'Saving...' : 'Save Balance'}
-              </button>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       )}
-
-      {/* Recent Leaves */}
-      <div className="recent-section">
-        <div className="recent-header">
-          <h2>Recent Leave Applications</h2>
-          <Link to="/leaves" className="view-all-link">
-            View All →
-          </Link>
-        </div>
-
-        {recentLeaves.length === 0 ? (
-          <div className="no-data">
-            <h3>No leave applications yet</h3>
-            <p>Apply for your first leave to see it here!</p>
-          </div>
-        ) : (
-          <div className="recent-table">
-            <table>
-              <thead>
-                <tr>
-                  {user?.role === 'admin' && <th>Employee</th>}
-                  <th>Type</th>
-                  <th>Start Date</th>
-                  <th>End Date</th>
-                  <th>Days</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentLeaves.map((leave) => (
-                  <tr key={leave._id}>
-                    {user?.role === 'admin' && (
-                      <td>
-                        {leave.user?.name || 'N/A'}
-                        <br />
-                        <small style={{ color: '#666' }}>{leave.user?.department}</small>
-                      </td>
-                    )}
-                    <td>
-                      <span className="leave-type-badge">{leave.leaveType}</span>
-                    </td>
-                    <td>{formatDate(leave.startDate)}</td>
-                    <td>{formatDate(leave.endDate)}</td>
-                    <td>{leave.numberOfDays}</td>
-                    <td>
-                      <span className={`status-badge status-${leave.status}`}>
-                        {leave.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
     </div>
   );
 };
