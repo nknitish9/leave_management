@@ -32,11 +32,11 @@ const LeaveList = () => {
     let filtered = [...leaves];
 
     if (filters.status !== 'all') {
-      filtered = filtered.filter(leave => leave.status === filters.status);
+      filtered = filtered.filter((leave) => leave.status === filters.status);
     }
 
     if (filters.type !== 'all') {
-      filtered = filtered.filter(leave => leave.leaveType === filters.type);
+      filtered = filtered.filter((leave) => leave.leaveType === filters.type);
     }
 
     setFilteredLeaves(filtered);
@@ -84,109 +84,86 @@ const LeaveList = () => {
   };
 
   if (loading) {
-    return <div className="leave-list"><h1>Loading...</h1></div>;
+    return <div className="page-loading">Loading...</div>;
   }
 
   return (
     <div className="leave-list">
-      <h1>{user?.role === 'admin' ? 'All Leave Applications' : 'My Leave Applications'}</h1>
-
-      {/* Filters */}
-      <div className="leave-filters">
-        <div className="filter-group">
-          <label>Filter by Status</label>
-          <select name="status" value={filters.status} onChange={handleFilterChange}>
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <label>Filter by Type</label>
-          <select name="type" value={filters.type} onChange={handleFilterChange}>
-            <option value="all">All Types</option>
-            <option value="sick">Sick Leave</option>
-            <option value="casual">Casual Leave</option>
-            <option value="annual">Annual Leave</option>
-          </select>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">
+            {user?.role === 'admin' ? 'All Leave Requests' : 'My Leave Requests'}
+          </h1>
+          <p className="page-subtitle">Review and manage leave requests from your team.</p>
         </div>
       </div>
 
-      {/* Leave Cards */}
-      {filteredLeaves.length === 0 ? (
-        <div className="no-leaves">
-          <h2>No leave applications found</h2>
-          <p>Try adjusting your filters or apply for a new leave.</p>
+      <div className="filters-row">
+        <div className="filters">
+          <div className="filter-group">
+            <label>Filters:</label>
+            <select name="status" value={filters.status} onChange={handleFilterChange}>
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label>&nbsp;</label>
+            <select name="type" value={filters.type} onChange={handleFilterChange}>
+              <option value="all">All Types</option>
+              <option value="sick">Sick Leave</option>
+              <option value="casual">Casual Leave</option>
+              <option value="annual">Annual Leave</option>
+            </select>
+          </div>
         </div>
+        <div className="results-count">{filteredLeaves.length} results</div>
+      </div>
+
+      {filteredLeaves.length === 0 ? (
+        <div className="empty-state">No leave applications found.</div>
       ) : (
         filteredLeaves.map((leave) => (
           <div key={leave._id} className="leave-card">
-            <div className="leave-header">
-              <div>
-                <div className="leave-type">{leave.leaveType} Leave</div>
-                {user?.role === 'admin' && leave.user && (
-                  <div style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.25rem' }}>
-                    {leave.user.name} ({leave.user.email})
-                  </div>
-                )}
+            <div className="leave-card-header">
+              <div className="leave-badges">
+                <span className={`badge type ${leave.leaveType}`}>{leave.leaveType}</span>
+                <span className={`badge status ${leave.status}`}>{leave.status}</span>
               </div>
-              <span className={`leave-status status-${leave.status}`}>
-                {leave.status.toUpperCase()}
-              </span>
-            </div>
-
-            <div className="leave-details">
-              <div className="detail-item">
-                <strong>Start Date:</strong> {formatDate(leave.startDate)}
-              </div>
-              <div className="detail-item">
-                <strong>End Date:</strong> {formatDate(leave.endDate)}
-              </div>
-              <div className="detail-item">
-                <strong>Duration:</strong> {leave.numberOfDays} day(s)
-              </div>
-              <div className="detail-item">
-                <strong>Applied On:</strong> {formatDate(leave.appliedAt)}
+              <div className="leave-user">
+                {user?.role === 'admin' && leave.user ? leave.user.name : user?.name}
               </div>
             </div>
-
-            <div className="leave-reason">
-              <strong>Reason:</strong> {leave.reason}
+            <div className="leave-reason-text">{leave.reason}</div>
+            <div className="leave-meta">
+              {formatDate(leave.startDate)} — {formatDate(leave.endDate)} · {leave.numberOfDays} day(s)
+              <span>Applied: {formatDate(leave.appliedAt)}</span>
             </div>
 
-            {leave.comments && (
-              <div className="leave-reason">
-                <strong>Admin Comments:</strong> {leave.comments}
-              </div>
-            )}
-
-            {/* Actions */}
             <div className="leave-actions">
               {user?.role === 'admin' && leave.status === 'pending' && (
                 <>
                   <button
-                    className="btn-approve"
+                    className="btn-success"
                     onClick={() => handleUpdateStatus(leave._id, 'approved')}
                   >
-                    ✓ Approve
+                    Approve
                   </button>
                   <button
-                    className="btn-reject"
+                    className="btn-danger"
                     onClick={() => handleUpdateStatus(leave._id, 'rejected')}
                   >
-                    ✗ Reject
+                    Reject
                   </button>
                 </>
               )}
 
               {user?.role !== 'admin' && leave.status === 'pending' && (
-                <button
-                  className="btn-delete"
-                  onClick={() => handleDelete(leave._id)}
-                >
-                  🗑 Delete
+                <button className="btn-danger" onClick={() => handleDelete(leave._id)}>
+                  Delete
                 </button>
               )}
             </div>
