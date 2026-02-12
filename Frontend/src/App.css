@@ -198,6 +198,7 @@ body {
   background: var(--card-bg);
   border-radius: var(--radius);
   padding: 24px;
+  margin-top: 10px;
   box-shadow: var(--shadow);
   border: 1px solid var(--border-color);
 }
@@ -806,8 +807,15 @@ body {
   cursor: pointer;
 }
 
+.apply-leave {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
 .form-panel {
-  max-width: 800px;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .form-group {
